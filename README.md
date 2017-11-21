@@ -4,7 +4,9 @@
 
 ### get an instance
 ```typescript
-const ea: EventAggregator = EventAggregator.getInstance("dom");
+const ea: EventAggregator = EventAggregator.getInstance("dom"); // acts like a Singleton
+
+const ea: EventAggregator = new EventAggregator();
 ```
 
 ### emit an event
