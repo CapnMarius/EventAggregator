@@ -77,22 +77,15 @@ export default class EventAggregator {
 }
 
 export const debounce = (fn: any, threshhold: number = 100, scope: any = null): any => {
-    let last: number;
-    let deferTimer: number;
+  let deferTimer: number;
 
-    return function() {
-        const now: number = Date.now();
-        const args: any = arguments;
-        if (last && now < last + threshhold) {
-            clearTimeout(deferTimer);
-            deferTimer = setTimeout(() => {
-                last = now;
-                fn.apply(scope, args);
-            }, threshhold);
-        } else {
-            last = now;
-        }
-    };
+  return function() {
+    const args: any = arguments;
+    clearTimeout(deferTimer);
+    deferTimer = setTimeout(() => {
+      fn.apply(scope, args);
+    }, threshhold);
+  };
 };
 
 export const throttle = (fn: any, threshhold: number = 100, scope: any = null): any => {
