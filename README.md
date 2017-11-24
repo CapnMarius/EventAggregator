@@ -44,14 +44,14 @@ ea.on("*", (data: any, event: string): void => {
 
 ### multiple event subscriptions
 ```typescript
-const subs: ISubscription[] = [];
+const subs: IUnsubscribe[] = [];
 
 subs.push(ea.on("resize", (data: any, event: string): void => {
   // do something on resize
 }));
 
 function unsubscribeAll(): void {
-  subs.forEach((sub: ISubscription): void => sub.off());
+  subs.forEach((sub: IUnsubscribe): void => sub.off());
   subs = [];
 }
 ```
