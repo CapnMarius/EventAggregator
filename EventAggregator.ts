@@ -1,79 +1,96 @@
+export interface IUnsubscribe {
+  off: () => void;
+}
+
+export type ISubscriberCallback = (data: any, event?: string) => void;
+
 export interface ISubscription {
-    off: () => void;
+  _id: number;
+  _fn: ISubscriberCallback;
+  once: boolean;
+}
+
+export interface ISubscriberStore {
+  [event: string]: ISubscription[];
+}
+
+interface IInstanceStore {
+  [type: string]: EventAggregator;
 }
 
 export default class EventAggregator {
-    public static getInstance(type: string = "main"): EventAggregator {
-        if (EventAggregator.instances[type] === undefined) {
-            EventAggregator.instances[type] = new EventAggregator();
-        }
-        return EventAggregator.instances[type];
+  private static instances: IInstanceStore = {};
+
+  public static getInstance(type: string = "main"): EventAggregator {
+    if (EventAggregator.instances[type] === undefined) {
+      EventAggregator.instances[type] = new EventAggregator();
     }
+    return EventAggregator.instances[type];
+  }
 
-    private static instances: {} = {};
+  private subs: ISubscriberStore = {};
+  private _id: number = 0;
 
-    private subs: {} = {};
-    private _id: number = 0;
-
-    private get nextId() {
-        return this._id++;
+  public on(event: string | string[], fn: ISubscriberCallback, once: boolean = false): IUnsubscribe {
+    if (Array.isArray(event)) {
+      const subs: IUnsubscribe[] = event.map((e: string) => this.on(e, fn, once));
+      return {
+        off: () => subs.forEach((sub: IUnsubscribe) => sub.off()),
+      };
+    } else {
+      return this.addSub(event, fn, once);
     }
+  }
 
-    public off(event: string, id: number) {
-        this.subs[event].splice(this.subs[event].findIndex((sub) => sub._id === id), 1);
+  public once(event: string | string[], fn: ISubscriberCallback): IUnsubscribe {
+    return this.on(event, fn, true);
+  }
+
+  public emit(event: string | string[], data?: any): EventAggregator {
+    if (Array.isArray(event)) {
+      event.forEach((e: string) => this.emit(e, data));
+    } else {
+      this.emitSubs(event, data, event);
+      this.emitSubs("*", data, event);
     }
+    return this;
+  }
 
-    public on(event: string | string[], fn: (data: any, event?: string) => any, once: boolean = false): ISubscription {
-        if (Array.isArray(event)) {
-            const subs: ISubscription[] = event.map((e: string) => this.addSub(e, fn, once));
-            return {
-                off: () => subs.forEach((sub: ISubscription) => sub.off()),
-            };
+  public off(event: string, id: number): EventAggregator {
+    this.subs[event].splice(this.subs[event].findIndex((sub) => sub._id === id), 1);
+    return this;
+  }
+
+  private addSub(event: string, fn: ISubscriberCallback, once: boolean = false): IUnsubscribe {
+    if (this.subs[event] === undefined) {
+      this.subs[event] = [];
+    }
+    const id: number = this.nextId;
+    this.subs[event].push({ _id: id, _fn: fn, once });
+    return { off: () => this.off(event, id) };
+  }
+
+  private emitSubs(event: string, data: any, originalEvent: string): void {
+    if (this.subs[event] !== undefined) {
+      for (let i: number = 0; i < this.subs[event].length; i++) {
+        const sub: ISubscription = this.subs[event][i];
+        if (typeof sub._fn === "function") {
+          sub._fn(data, originalEvent);
+          if (sub.once === true) {
+            this.off(event, sub._id);
+            i--;
+          }
         } else {
-            return this.addSub(event, fn, once);
+          this.off(event, sub._id);
+          i--;
         }
+      }
     }
+  }
 
-    public once(event: string | string[], fn: (data: any, event?: string) => any): ISubscription {
-        return this.on(event, fn, true);
-    }
-
-    public emit(event: string | string[], data?: any): void {
-        if (Array.isArray(event)) {
-            return event.forEach((e: string) => this.emitSubs(e, data, e));
-        } else {
-            this.emitSubs(event, data, event);
-        }
-        this.emitSubs("*", data, event);
-    }
-
-    private addSub(event: string, fn: (data: any, event?: string) => void, once: boolean = false): ISubscription {
-        const id: number = this.nextId;
-        const off = () => this.off(event, id);
-        if (this.subs[event] === undefined) {
-            this.subs[event] = [];
-        }
-        this.subs[event].push({ _id: id, _fn: fn, once });
-        return { off };
-    }
-
-    private emitSubs(event: string, data: any, originalEvent: string): void {
-        if (this.subs[event] !== undefined) {
-            for (let i: number = 0; i < this.subs[event].length; i++) {
-                const sub = this.subs[event][i];
-                if (typeof sub._fn === "function") {
-                    sub._fn(data, originalEvent);
-                    if (sub.once === true) {
-                        this.off(event, sub._id);
-                        i--;
-                    }
-                } else {
-                    this.off(event, sub._id);
-                    i--;
-                }
-            }
-        }
-    }
+  private get nextId() {
+    return this._id++;
+  }
 }
 
 export const debounce = (fn: any, threshhold: number = 100, scope: any = null): any => {
@@ -89,21 +106,21 @@ export const debounce = (fn: any, threshhold: number = 100, scope: any = null): 
 };
 
 export const throttle = (fn: any, threshhold: number = 100, scope: any = null): any => {
-    let last: number;
-    let deferTimer: number;
+  let last: number;
+  let deferTimer: number;
 
-    return function() {
-        const now: number = Date.now();
-        const args: any = arguments;
-        if (last && now < last + threshhold) {
-            clearTimeout(deferTimer);
-            deferTimer = setTimeout(() => {
-                last = now;
-                fn.apply(scope, args);
-            }, threshhold);
-        } else {
-            last = now;
-            fn.apply(scope, args);
-        }
-    };
+  return function() {
+    const now: number = Date.now();
+    const args: any = arguments;
+    if (last && now < last + threshhold) {
+      clearTimeout(deferTimer);
+      deferTimer = setTimeout(() => {
+        last = now;
+        fn.apply(scope, args);
+      }, threshhold);
+    } else {
+      last = now;
+      fn.apply(scope, args);
+    }
+  };
 };
