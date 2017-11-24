@@ -41,8 +41,8 @@ ea.once("resize", (data: any, event: string): void => {
 
 ### unsubscribe a subscription
 ```typescript
-const subscription: IUnsubscribe = ea.on("resize", (data: any, event: string): void => {...});
-subscription.off();
+const sub: ISubscriber = ea.on("resize", (data: any, event: string): void => {...});
+sub.off();
 ```
 
 ### subscribe to all events of the EventAggregator
@@ -55,14 +55,14 @@ ea.on("*", (data: any, event: string): void => {
 
 ### multiple event subscriptions
 ```typescript
-const subs: IUnsubscribe[] = [];
+const subs: ISubscriber[] = [];
 
 subs.push(ea.on("resize", (data: any, event: string): void => {
   // do something on resize
 }));
 
 function unsubscribeAll(): void {
-  subs.forEach((sub: IUnsubscribe): void => sub.off());
+  subs.forEach((sub: ISubscriber): void => sub.off());
   subs = [];
 }
 ```

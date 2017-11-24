@@ -49,7 +49,7 @@ var EventAggregator = /** @class */ (function () {
         if (this.subs[event] === undefined) {
             this.subs[event] = [];
         }
-        var id = this.nextId;
+        var id = this.getNextId();
         this.subs[event].push({ _id: id, _fn: fn, once: once });
         return { off: function () { return _this.off(event, id); } };
     };
@@ -71,13 +71,9 @@ var EventAggregator = /** @class */ (function () {
             }
         }
     };
-    Object.defineProperty(EventAggregator.prototype, "nextId", {
-        get: function () {
-            return this._id++;
-        },
-        enumerable: true,
-        configurable: true
-    });
+    EventAggregator.prototype.getNextId = function () {
+        return this._id++;
+    };
     EventAggregator.instances = {};
     return EventAggregator;
 }());

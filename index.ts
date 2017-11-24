@@ -1,4 +1,4 @@
-export interface IUnsubscribe {
+export interface ISubscriber {
   off: () => void;
 }
 
@@ -31,18 +31,18 @@ export default class EventAggregator {
   private subs: ISubscriberStore = {};
   private _id: number = 0;
 
-  public on(event: string | string[], fn: ISubscriberCallback, once: boolean = false): IUnsubscribe {
+  public on(event: string | string[], fn: ISubscriberCallback, once: boolean = false): ISubscriber {
     if (Array.isArray(event)) {
-      const subs: IUnsubscribe[] = event.map((e: string) => this.on(e, fn, once));
+      const subs: ISubscriber[] = event.map((e: string) => this.on(e, fn, once));
       return {
-        off: () => subs.forEach((sub: IUnsubscribe) => sub.off()),
+        off: () => subs.forEach((sub: ISubscriber) => sub.off()),
       };
     } else {
       return this.addSub(event, fn, once);
     }
   }
 
-  public once(event: string | string[], fn: ISubscriberCallback): IUnsubscribe {
+  public once(event: string | string[], fn: ISubscriberCallback): ISubscriber {
     return this.on(event, fn, true);
   }
 
@@ -57,15 +57,15 @@ export default class EventAggregator {
   }
 
   public off(event: string, id: number): EventAggregator {
-    this.subs[event].splice(this.subs[event].findIndex((sub) => sub._id === id), 1);
+    this.subs[event].splice(this.subs[event].findIndex((sub: ISubscription) => sub._id === id), 1);
     return this;
   }
 
-  private addSub(event: string, fn: ISubscriberCallback, once: boolean = false): IUnsubscribe {
+  private addSub(event: string, fn: ISubscriberCallback, once: boolean = false): ISubscriber {
     if (this.subs[event] === undefined) {
       this.subs[event] = [];
     }
-    const id: number = this.nextId;
+    const id: number = this.getNextId();
     this.subs[event].push({ _id: id, _fn: fn, once });
     return { off: () => this.off(event, id) };
   }
@@ -88,7 +88,7 @@ export default class EventAggregator {
     }
   }
 
-  private get nextId() {
+  private getNextId() {
     return this._id++;
   }
 }
