@@ -1,7 +1,11 @@
 {
   "name": "eventaggregator",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "EventAggregator pattern with very usefull features. Use it in NodeJS and the browser.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CapnMarius/EventAggregator.git"
+  },
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

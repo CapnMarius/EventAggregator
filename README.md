@@ -2,6 +2,17 @@
 
 ## Usage
 
+### import in TypeScript
+```typescript
+import EventAggregator, {debounce} from "eventaggregator";
+```
+### import in JavaScript
+```javascript
+const ea = require("eventaggregator");
+const EventAggregator = ea.default;
+const debounce = ea.debounce;
+```
+
 ### get an instance
 ```typescript
 const ea: EventAggregator = EventAggregator.getInstance("dom"); // acts like a Singleton
