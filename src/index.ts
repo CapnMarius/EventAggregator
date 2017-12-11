@@ -1,10 +1,10 @@
-interface ISubscriber {
+export interface ISubscriber {
   off: () => void;
 }
 
-type ISubscriberCallback = (data: any, event?: string) => void;
+export type ISubscriberCallback = (data: any, event?: string) => void;
 
-interface ISubscription {
+export interface ISubscription {
   _id: number;
   _fn: ISubscriberCallback;
   once: boolean;
@@ -126,4 +126,4 @@ const throttle = (fn: any, threshhold: number = 100, scope: any = null): any => 
 };
 
 export default EventAggregator;
-export { debounce, throttle, ISubscriber, ISubscriberCallback, ISubscription };
+export { debounce, throttle };
