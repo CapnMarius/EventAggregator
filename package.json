@@ -1,6 +1,6 @@
 {
   "name": "eventaggregator",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "EventAggregator pattern with very usefull features. Use it in NodeJS and the browser.",
   "repository": {
     "type": "git",
@@ -8,7 +8,8 @@
   },
   "main": "index.js",
   "scripts": {
-    "build": "tsc ./index.ts --lib esnext,dom"
+    "prepublish": "npm run build",
+    "build": "tsc ./src/index.ts --lib esnext --declaration true --outDir ./dist --module commonjs --target es5"
   },
   "keywords": [
     "event",

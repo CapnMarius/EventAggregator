@@ -1,16 +1,16 @@
-export interface ISubscriber {
+interface ISubscriber {
   off: () => void;
 }
 
-export type ISubscriberCallback = (data: any, event?: string) => void;
+type ISubscriberCallback = (data: any, event?: string) => void;
 
-export interface ISubscription {
+interface ISubscription {
   _id: number;
   _fn: ISubscriberCallback;
   once: boolean;
 }
 
-export interface ISubscriberStore {
+interface ISubscriberStore {
   [event: string]: ISubscription[];
 }
 
@@ -18,7 +18,7 @@ interface IInstanceStore {
   [type: string]: EventAggregator;
 }
 
-export default class EventAggregator {
+class EventAggregator {
   private static instances: IInstanceStore = {};
 
   public static getInstance(type: string = "main"): EventAggregator {
@@ -93,10 +93,10 @@ export default class EventAggregator {
   }
 }
 
-export const debounce = (fn: any, threshhold: number = 100, scope: any = null): any => {
+const debounce = (fn: any, threshhold: number = 100, scope: any = null): any => {
   let deferTimer: number;
 
-  return function() {
+  return function () {
     const args: any = arguments;
     clearTimeout(deferTimer);
     deferTimer = setTimeout(() => {
@@ -105,11 +105,11 @@ export const debounce = (fn: any, threshhold: number = 100, scope: any = null): 
   };
 };
 
-export const throttle = (fn: any, threshhold: number = 100, scope: any = null): any => {
+const throttle = (fn: any, threshhold: number = 100, scope: any = null): any => {
   let last: number;
   let deferTimer: number;
 
-  return function() {
+  return function () {
     const now: number = Date.now();
     const args: any = arguments;
     if (last && now < last + threshhold) {
@@ -124,3 +124,6 @@ export const throttle = (fn: any, threshhold: number = 100, scope: any = null): 
     }
   };
 };
+
+export default EventAggregator;
+export { debounce, throttle, ISubscriber, ISubscriberCallback, ISubscription };
