@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var EventAggregator = (function () {
+var EventAggregator = /** @class */ (function () {
     function EventAggregator() {
         this.subs = {};
         this._id = 0;
@@ -40,7 +40,10 @@ var EventAggregator = (function () {
         return this;
     };
     EventAggregator.prototype.off = function (event, id) {
-        this.subs[event].splice(this.subs[event].findIndex(function (sub) { return sub._id === id; }), 1);
+        var index = this.subs[event].findIndex(function (sub) { return sub._id === id; });
+        if (index >= 0) {
+            this.subs[event].splice(index, 1);
+        }
         return this;
     };
     EventAggregator.prototype.addSub = function (event, fn, once) {

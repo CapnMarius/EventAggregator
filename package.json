@@ -1,6 +1,6 @@
 {
   "name": "eventaggregator",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "EventAggregator pattern with very usefull features. Use it in NodeJS and the browser.",
   "repository": {
     "type": "git",

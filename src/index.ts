@@ -57,7 +57,10 @@ class EventAggregator {
   }
 
   public off(event: string, id: number): EventAggregator {
-    this.subs[event].splice(this.subs[event].findIndex((sub: ISubscription) => sub._id === id), 1);
+    const index = this.subs[event].findIndex((sub: ISubscription) => sub._id === id);
+    if (index >= 0) {
+      this.subs[event].splice(index, 1);
+    }
     return this;
   }
 
