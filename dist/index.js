@@ -2,105 +2,98 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var EventAggregator = /** @class */ (function () {
     function EventAggregator() {
-        this.subs = {};
+        this._subs = {};
         this._id = 0;
     }
     EventAggregator.getInstance = function (type) {
         if (type === void 0) { type = "main"; }
-        if (EventAggregator.instances[type] === undefined) {
-            EventAggregator.instances[type] = new EventAggregator();
-        }
-        return EventAggregator.instances[type];
+        if (EventAggregator._instances[type] === undefined)
+            EventAggregator._instances[type] = new EventAggregator();
+        return EventAggregator._instances[type];
     };
     EventAggregator.prototype.on = function (event, fn, once) {
         var _this = this;
         if (once === void 0) { once = false; }
         if (Array.isArray(event)) {
-            var subs_1 = event.map(function (e) { return _this.on(e, fn, once); });
+            var subs_1 = event.map(function (x) { return _this.on(x, fn, once); });
             return {
-                off: function () { return subs_1.forEach(function (sub) { return sub.off(); }); },
+                off: function () { return subs_1.forEach(function (x) { return x.off(); }); }
             };
         }
-        else {
-            return this.addSub(event, fn, once);
-        }
+        if (this._subs[event] === undefined)
+            this._subs[event] = [];
+        var sub = { _id: this._nextId(), _fn: fn, once: once };
+        this._subs[event].push(sub);
+        return {
+            off: function () {
+                var index = _this._subs[event].indexOf(sub);
+                if (index !== -1)
+                    _this._subs[event].splice(index, 1);
+            }
+        };
     };
     EventAggregator.prototype.once = function (event, fn) {
         return this.on(event, fn, true);
     };
     EventAggregator.prototype.emit = function (event, data) {
         var _this = this;
-        if (Array.isArray(event)) {
-            event.forEach(function (e) { return _this.emit(e, data); });
-        }
+        if (Array.isArray(event))
+            event.forEach(function (x) { return _this.emit(x, data); });
         else {
-            this.emitSubs(event, data, event);
-            this.emitSubs("*", data, event);
+            this._emit(event, data, event);
+            this._emit("*", data, event);
         }
         return this;
     };
-    EventAggregator.prototype.off = function (event, id) {
-        var index = this.subs[event].findIndex(function (sub) { return sub._id === id; });
-        if (index >= 0) {
-            this.subs[event].splice(index, 1);
-        }
-        return this;
-    };
-    EventAggregator.prototype.addSub = function (event, fn, once) {
+    EventAggregator.prototype.off = function (event) {
         var _this = this;
-        if (once === void 0) { once = false; }
-        if (this.subs[event] === undefined) {
-            this.subs[event] = [];
-        }
-        var id = this.getNextId();
-        this.subs[event].push({ _id: id, _fn: fn, once: once });
-        return { off: function () { return _this.off(event, id); } };
+        if (Array.isArray(event))
+            event.forEach(function (x) { return _this.off(x); });
+        else
+            delete this._subs[event];
+        return this;
     };
-    EventAggregator.prototype.emitSubs = function (event, data, originalEvent) {
-        if (this.subs[event] !== undefined) {
-            for (var i = 0; i < this.subs[event].length; i++) {
-                var sub = this.subs[event][i];
-                if (typeof sub._fn === "function") {
-                    sub._fn(data, originalEvent);
-                    if (sub.once === true) {
-                        this.off(event, sub._id);
-                        i--;
-                    }
-                }
-                else {
-                    this.off(event, sub._id);
-                    i--;
-                }
-            }
-        }
+    EventAggregator.prototype._emit = function (event, data, originalEvent) {
+        if (this._subs[event] === undefined)
+            return;
+        this._subs[event] = this._subs[event].filter(function (x) {
+            if (typeof x._fn !== "function")
+                return false;
+            x._fn(data, originalEvent);
+            return !x.once;
+        });
     };
-    EventAggregator.prototype.getNextId = function () {
+    EventAggregator.prototype._nextId = function () {
         return this._id++;
     };
-    EventAggregator.instances = {};
+    EventAggregator._instances = {};
     return EventAggregator;
 }());
-var debounce = function (fn, threshhold, scope) {
+exports.EventAggregator = EventAggregator;
+exports.debounce = function (fn, threshhold, scope) {
     if (threshhold === void 0) { threshhold = 100; }
     if (scope === void 0) { scope = null; }
     var deferTimer;
-    return function () {
-        var args = arguments;
+    return (function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
         clearTimeout(deferTimer);
-        deferTimer = setTimeout(function () {
-            fn.apply(scope, args);
-        }, threshhold);
-    };
+        deferTimer = setTimeout(function () { return fn.apply(scope, args); }, threshhold);
+    });
 };
-exports.debounce = debounce;
-var throttle = function (fn, threshhold, scope) {
+exports.throttle = function (fn, threshhold, scope) {
     if (threshhold === void 0) { threshhold = 100; }
     if (scope === void 0) { scope = null; }
     var last;
     var deferTimer;
-    return function () {
+    return (function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
         var now = Date.now();
-        var args = arguments;
         if (last && now < last + threshhold) {
             clearTimeout(deferTimer);
             deferTimer = setTimeout(function () {
@@ -112,7 +105,5 @@ var throttle = function (fn, threshhold, scope) {
             last = now;
             fn.apply(scope, args);
         }
-    };
+    });
 };
-exports.throttle = throttle;
-exports.default = EventAggregator;

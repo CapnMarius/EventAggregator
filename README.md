@@ -4,25 +4,25 @@
 
 ### import in TypeScript
 ```typescript
-import EventAggregator, {debounce} from "eventaggregator";
+import {EventAggregator, debounce} from "eventaggregator";
 ```
 ### import in JavaScript
 ```javascript
 const ea = require("eventaggregator");
-const EventAggregator = ea.default;
+const EventAggregator = ea.EventAggregator;
 const debounce = ea.debounce;
 ```
 
 ### get an instance
 ```typescript
-const ea: EventAggregator = EventAggregator.getInstance("dom"); // acts like a Singleton
+const ea = EventAggregator.getInstance("dom"); // acts like a Singleton
 
-const ea: EventAggregator = new EventAggregator();
+const ea = new EventAggregator();
 ```
 
 ### emit an event
 ```typescript
-window.addEventListener("resize", (event: any): void => ea.emit("resize", event));
+window.addEventListener("resize", event => ea.emit("resize", event));
 ```
 
 ### subscribe to an event
@@ -41,7 +41,7 @@ ea.once("resize", (data: any, event: string): void => {
 
 ### unsubscribe a subscription
 ```typescript
-const sub: ISubscriber = ea.on("resize", (data: any, event: string): void => {...});
+const sub = ea.on("resize", (data: any, event: string): void => {...});
 sub.off();
 ```
 
@@ -49,22 +49,21 @@ sub.off();
 ```typescript
 ea.on("*", (data: any, event: string): void => {
   // handle all events
-  // originalEvent holds the event name, for example: "resize"
+  // event holds the original event name, for example: "resize"
 });
 ```
 
 ### multiple event subscriptions
 ```typescript
-const subs: ISubscriber[] = [];
+const subs = ea.on(["click", "touchstart"], (data: any, event: string): void => {...});
+subs.off();
+```
 
-subs.push(ea.on("resize", (data: any, event: string): void => {
-  // do something on resize
-}));
-
-function unsubscribeAll(): void {
-  subs.forEach((sub: ISubscriber): void => sub.off());
-  subs = [];
-}
+### remove all event subscriptions
+```typescript
+ea.off("resize")
+// or
+ea.off(["click", "touchstart"])
 ```
 
 ### throttle an event

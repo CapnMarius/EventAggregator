@@ -7,20 +7,17 @@ export interface ISubscription {
     _fn: ISubscriberCallback;
     once: boolean;
 }
-declare class EventAggregator {
-    private static instances;
+export declare class EventAggregator {
+    private static _instances;
     static getInstance(type?: string): EventAggregator;
-    private subs;
+    private _subs;
     private _id;
     on(event: string | string[], fn: ISubscriberCallback, once?: boolean): ISubscriber;
     once(event: string | string[], fn: ISubscriberCallback): ISubscriber;
-    emit(event: string | string[], data?: any): EventAggregator;
-    off(event: string, id: number): EventAggregator;
-    private addSub(event, fn, once?);
-    private emitSubs(event, data, originalEvent);
-    private getNextId();
+    emit(event: string | string[], data?: any): this;
+    off(event: string | string[]): this;
+    private _emit(event, data, originalEvent);
+    private _nextId();
 }
-declare const debounce: (fn: any, threshhold?: number, scope?: any) => any;
-declare const throttle: (fn: any, threshhold?: number, scope?: any) => any;
-export default EventAggregator;
-export { debounce, throttle };
+export declare const debounce: <T extends Function>(fn: T, threshhold?: number, scope?: any) => T;
+export declare const throttle: <T extends Function>(fn: T, threshhold?: number, scope?: any) => T;

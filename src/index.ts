@@ -1,132 +1,115 @@
 export interface ISubscriber {
-  off: () => void;
+  off: () => void
 }
 
-export type ISubscriberCallback = (data: any, event?: string) => void;
+export type ISubscriberCallback = (data: any, event?: string) => void
 
 export interface ISubscription {
-  _id: number;
-  _fn: ISubscriberCallback;
-  once: boolean;
+  _id: number
+  _fn: ISubscriberCallback
+  once: boolean
 }
 
 interface ISubscriberStore {
-  [event: string]: ISubscription[];
+  [event: string]: ISubscription[]
 }
 
 interface IInstanceStore {
-  [type: string]: EventAggregator;
+  [type: string]: EventAggregator
 }
 
-class EventAggregator {
-  private static instances: IInstanceStore = {};
+export class EventAggregator {
+  private static _instances: IInstanceStore = {}
 
-  public static getInstance(type: string = "main"): EventAggregator {
-    if (EventAggregator.instances[type] === undefined) {
-      EventAggregator.instances[type] = new EventAggregator();
-    }
-    return EventAggregator.instances[type];
+  public static getInstance(type: string = "main") {
+    if (EventAggregator._instances[type] === undefined) EventAggregator._instances[type] = new EventAggregator()
+    return EventAggregator._instances[type]
   }
 
-  private subs: ISubscriberStore = {};
-  private _id: number = 0;
+  private _subs: ISubscriberStore = {}
+  private _id = 0
 
   public on(event: string | string[], fn: ISubscriberCallback, once: boolean = false): ISubscriber {
     if (Array.isArray(event)) {
-      const subs: ISubscriber[] = event.map((e: string) => this.on(e, fn, once));
+      const subs = event.map(x => this.on(x, fn, once))
       return {
-        off: () => subs.forEach((sub: ISubscriber) => sub.off()),
-      };
-    } else {
-      return this.addSub(event, fn, once);
+        off: () => subs.forEach(x => x.off())
+      }
     }
-  }
 
-  public once(event: string | string[], fn: ISubscriberCallback): ISubscriber {
-    return this.on(event, fn, true);
-  }
+    if (this._subs[event] === undefined) this._subs[event] = []
+    const sub = { _id: this._nextId(), _fn: fn, once }
+    this._subs[event].push(sub)
 
-  public emit(event: string | string[], data?: any): EventAggregator {
-    if (Array.isArray(event)) {
-      event.forEach((e: string) => this.emit(e, data));
-    } else {
-      this.emitSubs(event, data, event);
-      this.emitSubs("*", data, event);
-    }
-    return this;
-  }
-
-  public off(event: string, id: number): EventAggregator {
-    const index = this.subs[event].findIndex((sub: ISubscription) => sub._id === id);
-    if (index >= 0) {
-      this.subs[event].splice(index, 1);
-    }
-    return this;
-  }
-
-  private addSub(event: string, fn: ISubscriberCallback, once: boolean = false): ISubscriber {
-    if (this.subs[event] === undefined) {
-      this.subs[event] = [];
-    }
-    const id: number = this.getNextId();
-    this.subs[event].push({ _id: id, _fn: fn, once });
-    return { off: () => this.off(event, id) };
-  }
-
-  private emitSubs(event: string, data: any, originalEvent: string): void {
-    if (this.subs[event] !== undefined) {
-      for (let i: number = 0; i < this.subs[event].length; i++) {
-        const sub: ISubscription = this.subs[event][i];
-        if (typeof sub._fn === "function") {
-          sub._fn(data, originalEvent);
-          if (sub.once === true) {
-            this.off(event, sub._id);
-            i--;
-          }
-        } else {
-          this.off(event, sub._id);
-          i--;
-        }
+    return {
+      off: () => {
+        const index = this._subs[event].indexOf(sub)
+        if (index !== -1)
+          this._subs[event].splice(index, 1)
       }
     }
   }
 
-  private getNextId() {
-    return this._id++;
+  public once(event: string | string[], fn: ISubscriberCallback) {
+    return this.on(event, fn, true)
+  }
+
+  public emit(event: string | string[], data?: any) {
+    if (Array.isArray(event)) event.forEach(x => this.emit(x, data))
+    else {
+      this._emit(event, data, event)
+      this._emit("*", data, event)
+    }
+    return this
+  }
+
+  public off(event: string | string[]) {
+    if (Array.isArray(event)) event.forEach(x => this.off(x))
+    else delete this._subs[event]
+    return this
+  }
+  
+
+  private _emit(event: string, data: any, originalEvent: string) {
+    if (this._subs[event] === undefined) return
+
+    this._subs[event] = this._subs[event].filter(x => {
+      if (typeof x._fn !== "function") return false
+      x._fn(data, originalEvent)
+      return !x.once
+    })
+  }
+
+  private _nextId() {
+    return this._id++
   }
 }
 
-const debounce = (fn: any, threshhold: number = 100, scope: any = null): any => {
-  let deferTimer: number;
+export const debounce = <T extends Function>(fn: T, threshhold = 100, scope: any = null): T => {
+  let deferTimer
 
-  return function () {
-    const args: any = arguments;
-    clearTimeout(deferTimer);
-    deferTimer = setTimeout(() => {
-      fn.apply(scope, args);
-    }, threshhold);
-  };
-};
+  return ((...args: any[]) => {
+    clearTimeout(deferTimer)
+    deferTimer = setTimeout(() => fn.apply(scope, args), threshhold)
+  }) as any as T
+}
 
-const throttle = (fn: any, threshhold: number = 100, scope: any = null): any => {
-  let last: number;
-  let deferTimer: number;
+export const throttle = <T extends Function>(fn: T, threshhold = 100, scope: any = null): T => {
+  let last: number
+  let deferTimer
 
-  return function () {
-    const now: number = Date.now();
-    const args: any = arguments;
+  return ((...args: any[]) => {
+    const now = Date.now()
     if (last && now < last + threshhold) {
-      clearTimeout(deferTimer);
+      clearTimeout(deferTimer)
       deferTimer = setTimeout(() => {
-        last = now;
-        fn.apply(scope, args);
-      }, threshhold);
-    } else {
-      last = now;
-      fn.apply(scope, args);
+        last = now
+        fn.apply(scope, args)
+      }, threshhold)
     }
-  };
-};
-
-export default EventAggregator;
-export { debounce, throttle };
+    else {
+      last = now
+      fn.apply(scope, args)
+    }
+  }) as any as T
+}
